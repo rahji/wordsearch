@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"regexp"
 
 	"github.com/spf13/pflag"
 )
 
 func main() {
+
 	// Define flags
 	var (
 		inputFile string
@@ -40,8 +42,9 @@ func main() {
 		defer file.Close()
 		reader = file
 	} else {
-		// No file specified, use standard input
+		// get the word list from STDIN
 		stat, _ := os.Stdin.Stat()
+		// unless the STDIN is not piped data
 		if (stat.Mode() & os.ModeCharDevice) != 0 {
 			fmt.Fprintln(os.Stderr, "No input file specified and no data piped to STDIN")
 			fmt.Fprintln(os.Stderr, "Usage: either pipe data to STDIN or use -f flag to specify input file")
@@ -60,9 +63,14 @@ func main() {
 	i := 0
 	for scanner.Scan() {
 		word := scanner.Text()
-		// Process the word here - for now just print it
+		re, _ := regexp.Compile("[^[:alpha:]]")
+		replacement := ""
+		actual := string(re.ReplaceAll([]byte(word), []byte(replacement)))
+		if actual == "" {
+			continue
+		}
 		i++
-		fmt.Printf("%3d %s\n", i, word)
+		fmt.Printf("%3d %s\n", i, actual)
 	}
 
 	if err := scanner.Err(); err != nil {
