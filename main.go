@@ -72,17 +72,12 @@ func makeWordlist(infile string) ([]string, error) {
 	var words []string
 	for scanner.Scan() {
 		line := scanner.Text()
-
-		// remove non-letter characters from the line
-		re, _ := regexp.Compile("[^[:alpha:]]")
-		replacement := ""
-		word := string(re.ReplaceAll([]byte(line), []byte(replacement)))
+		word := cleanString(line)
 
 		// if the line is empty now, skip it
 		if word == "" {
 			continue
 		}
-
 		words = append(words, word)
 	}
 
@@ -91,4 +86,12 @@ func makeWordlist(infile string) ([]string, error) {
 	}
 
 	return words, nil
+}
+
+// Remove non-letter characters from a string
+func cleanString(s string) (ret string) {
+	re, _ := regexp.Compile("[^[:alpha:]]")
+	replacement := ""
+	ret = string(re.ReplaceAll([]byte(s), []byte(replacement)))
+	return
 }
