@@ -5,7 +5,8 @@ import (
 	"testing"
 )
 
-func TestCreateGrid(t *testing.T) {
+// TestCreateEmptyGrid creates a WordSearch instance and verifies that an empty grid was created
+func TestCreateEmptyGrid(t *testing.T) {
 
 	ws := NewWordSearch(15)
 
@@ -31,7 +32,9 @@ func TestCreateGrid(t *testing.T) {
 	}
 }
 
-func TestReplaceCharactersVariousSizes(t *testing.T) {
+// TestFillGridVariousSizes tests that different sized grids can be filled with letters.
+// It also shows that multiple WordSearch instances can be created.
+func TestFillGridVariousSizes(t *testing.T) {
 
 	tests := []struct {
 		name       string
@@ -44,14 +47,14 @@ func TestReplaceCharactersVariousSizes(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
-			for _, row := range tt.wordsearch.Grid {
-				t.Log(string(row))
+			for _, cell := range tt.wordsearch.Grid {
+				t.Log(string(cell))
 			}
 
 			tt.wordsearch.fillGrid()
 
-			for _, row := range tt.wordsearch.Grid {
-				t.Log(string(row))
+			for _, cell := range tt.wordsearch.Grid {
+				t.Log(string(cell))
 			}
 
 			// Verify all positions contain valid letters
@@ -67,3 +70,57 @@ func TestReplaceCharactersVariousSizes(t *testing.T) {
 		})
 	}
 }
+
+// TestPlaceWord tests the placement of the word FOUR in various positions and directions
+func TestPlaceWord(t *testing.T) {
+	tests := []struct {
+		name      string
+		row, col  int
+		direction string
+		wantError bool
+	}{
+		{
+			name:      "horizontal placement success",
+			row:       0,
+			col:       0,
+			direction: "E",
+			wantError: false,
+		},
+		{
+			name:      "vertical placement success",
+			row:       9,
+			col:       0,
+			direction: "N",
+			wantError: false,
+		},
+		{
+			name:      "placement fails due to boundary",
+			row:       0,
+			col:       2,
+			direction: "W",
+			wantError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ws := NewWordSearch(10)
+			err := ws.PlaceWord("FOUR", tt.row, tt.col, tt.direction)
+
+			if (err != nil) != tt.wantError {
+				t.Errorf("PlaceWord() error = %v, wantError %v", err != nil, tt.wantError)
+			}
+
+			t.Log(tt.name)
+			for _, cell := range ws.Grid {
+				t.Log(string(cell))
+			}
+		})
+	}
+}
+
+// test 1: Verify that a word can be placed horizontally
+// test 2: Verify that a word can be placed vertically
+// test 3: Verify that a word can NOT be placed too far to the left or right
+// test 4: Verify that a word can NOT be placed too far to the top or bottom
+// test 5: Verify that a word can NOT be placed on top of another word

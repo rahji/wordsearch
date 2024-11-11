@@ -1,6 +1,7 @@
 package wordsearch
 
 import (
+	"errors"
 	"math/rand"
 )
 
@@ -9,31 +10,31 @@ const (
 	alphabet    = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 )
 
-// direction is a private type that represents a cardinal direction
+// direction is a private type that represents the 2 axes of a cardinal direction
 type direction struct {
 	x int
 	y int
 }
 
-// allDirections is a private helper function that returns a slice
-// of all legitimate `direction` values
-func allDirections() []direction {
-	return []direction{
-		{x: 0, y: 1},   // N
-		{x: 1, y: 1},   // NE
-		{x: 1, y: 0},   // E
-		{x: 1, y: -1},  // SE
-		{x: 0, y: -1},  // S
-		{x: -1, y: -1}, // SW
-		{x: -1, y: 0},  // W
-		{x: -1, y: 1},  // NW
+// allDirectionsMap returns a map where keys are string representations
+// of cardinal directions and values are `direction` structs
+func allDirectionsMap() map[string]direction {
+	return map[string]direction{
+		"N":  {x: 0, y: -1},
+		"NE": {x: 1, y: -1},
+		"E":  {x: 1, y: 0},
+		"SE": {x: 1, y: 1},
+		"S":  {x: 0, y: 1},
+		"SW": {x: -1, y: 1},
+		"W":  {x: -1, y: 0},
+		"NW": {x: -1, y: -1},
 	}
 }
 
 // WordSearch contains config info and the actual grid of rows and cols
 type WordSearch struct {
 	Size       int
-	directions []direction
+	directions map[string]direction
 	Grid       [][]rune
 }
 
@@ -53,7 +54,7 @@ func createEmptyGrid(size int) [][]rune {
 func NewWordSearch(size int) *WordSearch {
 	return &WordSearch{
 		Size:       size,
-		directions: allDirections(),
+		directions: allDirectionsMap(),
 		Grid:       createEmptyGrid(size),
 	}
 }
@@ -70,26 +71,22 @@ func (ws *WordSearch) fillGrid() {
 	}
 }
 
-/*
-// CanPlaceWord returns true if the word can be placed in the specified location on the grid
-func CanPlaceWord(grid [][]rune, word []rune, row int, col int, dir Direction) (bool) {
-	size := len(grid)
-	for i := 0; i < len(word) ; i++ {
-		r := row + i * dir.y
-		c := row + i * dir.x
-		if r < 0 || r >= size
-			return false
-		if c <
-		    fmt.Printf("Rune %v is '%c'\n", i, runes[i])
-}
-}
-// PlaceWord tries to place the specified word can be placed on the grid
-func PlaceWord(grid [][]rune, word []rune, row int, col int, dir Direction, size int) (error) {
-	for r := range grid {
-		for c := range grid[r] {
-			newRow := row +
+// PlaceWord tries to write a word to the grid and returns an error if it isn't a valid location
+func (ws *WordSearch) PlaceWord(str string, row int, col int, cardinal string) error {
+	dir := ws.directions[cardinal]
+	word := []rune(str)
+	tempGrid := ws.Grid
+	for i := 0; i < len(word); i++ {
+		r := row + i*dir.y
+		c := col + i*dir.x
+		if r < 0 || r >= ws.Size || c < 0 || c >= ws.Size {
+			return errors.New("word extends outside of the grid")
 		}
-
+		if ws.Grid[r][c] != defaultRune {
+			return errors.New("word would overlap an existing word")
+		}
+		tempGrid[r][c] = word[i]
 	}
+	ws.Grid = tempGrid
+	return nil
 }
-*/
