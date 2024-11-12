@@ -5,6 +5,12 @@ import (
 	"testing"
 )
 
+/*
+xxx todo:
+test CreatePuzzle(words []string) (unplaced []string)
+tests for the wordlist package
+*/
+
 // TestCreateEmptyGrid creates a WordSearch instance and verifies that an empty grid was created
 func TestCreateEmptyGrid(t *testing.T) {
 
@@ -51,7 +57,7 @@ func TestFillGridVariousSizes(t *testing.T) {
 				t.Log(string(cell))
 			}
 
-			tt.wordsearch.fillGrid()
+			tt.wordsearch.fillRemainingGrid()
 
 			for _, cell := range tt.wordsearch.Grid {
 				t.Log(string(cell))
@@ -72,6 +78,7 @@ func TestFillGridVariousSizes(t *testing.T) {
 }
 
 // TestPlaceWord tests the placement of the word FOUR in various positions and directions
+// tests: horizontal, vertical, too far in each of the cardinal directions, overlap!
 func TestPlaceWord(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -118,9 +125,3 @@ func TestPlaceWord(t *testing.T) {
 		})
 	}
 }
-
-// test 1: Verify that a word can be placed horizontally
-// test 2: Verify that a word can be placed vertically
-// test 3: Verify that a word can NOT be placed too far to the left or right
-// test 4: Verify that a word can NOT be placed too far to the top or bottom
-// test 5: Verify that a word can NOT be placed on top of another word

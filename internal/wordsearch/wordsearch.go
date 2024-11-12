@@ -3,11 +3,13 @@ package wordsearch
 import (
 	"errors"
 	"math/rand"
+	"sort"
 )
 
 const (
 	defaultRune = '.'
 	alphabet    = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	attempts    = 100
 )
 
 // direction is a private type that represents the 2 axes of a cardinal direction
@@ -59,18 +61,6 @@ func NewWordSearch(size int) *WordSearch {
 	}
 }
 
-// fillGrid replaces any default runes to a random letter in the whole grid
-func (ws *WordSearch) fillGrid() {
-	letters := []rune(alphabet)
-	for i := range ws.Grid {
-		for j := range ws.Grid[i] {
-			if ws.Grid[i][j] == defaultRune {
-				ws.Grid[i][j] = letters[rand.Intn(len(letters))]
-			}
-		}
-	}
-}
-
 // PlaceWord tries to write a word to the grid and returns an error if it isn't a valid location
 func (ws *WordSearch) PlaceWord(str string, row int, col int, cardinal string) error {
 	dir := ws.directions[cardinal]
@@ -89,4 +79,49 @@ func (ws *WordSearch) PlaceWord(str string, row int, col int, cardinal string) e
 	}
 	ws.Grid = tempGrid
 	return nil
+}
+
+// fillRemainingGrid replaces any default runes to a random letter in the whole grid
+func (ws *WordSearch) fillRemainingGrid() {
+	letters := []rune(alphabet)
+	for i := range ws.Grid {
+		for j := range ws.Grid[i] {
+			if ws.Grid[i][j] == defaultRune {
+				ws.Grid[i][j] = letters[rand.Intn(len(letters))]
+			}
+		}
+	}
+}
+
+// CreatePuzzle places the words from the words list and returns a list
+// of words that could not be placed
+func (ws *WordSearch) CreatePuzzle(words []string) (unplaced []string) {
+	// sort the slice of words by length, longest first
+	sort.Slice(words, func(i, j int) bool {
+		return len(words[i]) > len(words[j])
+	})
+	// make a slice of strings containing the keys to the direction map (eg: "N", "SE", etc.)
+	keys := make([]string, 0, len(ws.directions))
+	for key := range ws.directions {
+		keys = append(keys, key)
+	}
+	// make a bunch of random attempts to fit each word into the grid
+	for _, word := range words {
+		placed := false
+		for i := 0; i < attempts; i++ {
+			dir := keys[rand.Intn(len(keys))] // `dir` is "N", "SE", etc.
+			row := rand.Intn(ws.Size - 1)
+			col := rand.Intn(ws.Size - 1)
+			err := ws.PlaceWord(word, row, col, dir)
+			if err == nil {
+				placed = true
+				break
+			}
+		}
+		if placed == false {
+			unplaced = append(unplaced, word)
+		}
+	}
+	ws.fillRemainingGrid()
+	return
 }
