@@ -1,15 +1,9 @@
 package wordsearch
 
 import (
-	"fmt"
 	"strings"
 	"testing"
 )
-
-/*
-xxx todo:
-tests for the wordlist package
-*/
 
 // printGrid is a private function that logs the grid
 func printGrid(t *testing.T, grid [][]rune) {
@@ -149,9 +143,40 @@ func TestPlaceWord(t *testing.T) {
 }
 
 func TestCreatePuzzle(t *testing.T) {
-	ws := NewWordSearch(10)
-	words := []string{"ONE", "TWO", "THREE", "FOUR"}
-	unplaced := ws.CreatePuzzle(words)
-	printGrid(t, ws.Grid)
-	fmt.Printf("unplaced: %v", unplaced)
+
+	tests := []struct {
+		name           string
+		wordsearch     WordSearch
+		words          []string
+		expectUnplaced bool
+	}{
+		{
+			name:           "normal grid",
+			wordsearch:     *NewWordSearch(10),
+			words:          []string{"ONE", "TWO", "THREE", "FOUR"},
+			expectUnplaced: false,
+		},
+		{
+			name:           "overlap grid",
+			wordsearch:     *NewWordSearch(3),
+			words:          []string{"OOO", "OOO", "OOO"},
+			expectUnplaced: false,
+		},
+		{
+			name:           "impossible grid",
+			wordsearch:     *NewWordSearch(3),
+			words:          []string{"ONE", "TWO", "DOS", "POO", "PRO"},
+			expectUnplaced: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			unplaced := tt.wordsearch.CreatePuzzle(tt.words)
+			if len(unplaced) > 0 && !tt.expectUnplaced {
+				t.Errorf("expected no unplaced, got %v", len(unplaced))
+			}
+			printGrid(t, tt.wordsearch.Grid)
+		})
+	}
 }
