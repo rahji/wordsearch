@@ -1,15 +1,22 @@
 package wordsearch
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 )
 
 /*
 xxx todo:
-test CreatePuzzle(words []string) (unplaced []string)
 tests for the wordlist package
 */
+
+// printGrid is a private function that logs the grid
+func printGrid(t *testing.T, grid [][]rune) {
+	for _, cell := range grid {
+		t.Log(string(cell))
+	}
+}
 
 // TestCreateEmptyGrid creates a WordSearch instance and verifies that an empty grid was created
 func TestCreateEmptyGrid(t *testing.T) {
@@ -53,15 +60,11 @@ func TestFillGridVariousSizes(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
-			for _, cell := range tt.wordsearch.Grid {
-				t.Log(string(cell))
-			}
+			printGrid(t, tt.wordsearch.Grid)
 
 			tt.wordsearch.fillRemainingGrid()
 
-			for _, cell := range tt.wordsearch.Grid {
-				t.Log(string(cell))
-			}
+			printGrid(t, tt.wordsearch.Grid)
 
 			// Verify all positions contain valid letters
 			validChars := "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -101,10 +104,31 @@ func TestPlaceWord(t *testing.T) {
 			wantError: false,
 		},
 		{
-			name:      "placement fails due to boundary",
+			name:      "placement fails due to left boundary",
 			row:       0,
 			col:       2,
 			direction: "W",
+			wantError: true,
+		},
+		{
+			name:      "placement fails due to right boundary",
+			row:       0,
+			col:       8,
+			direction: "E",
+			wantError: true,
+		},
+		{
+			name:      "placement fails due to top boundary",
+			row:       0,
+			col:       2,
+			direction: "N",
+			wantError: true,
+		},
+		{
+			name:      "placement fails due to bottom boundary",
+			row:       8,
+			col:       2,
+			direction: "S",
 			wantError: true,
 		},
 	}
@@ -119,9 +143,15 @@ func TestPlaceWord(t *testing.T) {
 			}
 
 			t.Log(tt.name)
-			for _, cell := range ws.Grid {
-				t.Log(string(cell))
-			}
+			printGrid(t, ws.Grid)
 		})
 	}
+}
+
+func TestCreatePuzzle(t *testing.T) {
+	ws := NewWordSearch(10)
+	words := []string{"ONE", "TWO", "THREE", "FOUR"}
+	unplaced := ws.CreatePuzzle(words)
+	printGrid(t, ws.Grid)
+	fmt.Printf("unplaced: %v", unplaced)
 }
