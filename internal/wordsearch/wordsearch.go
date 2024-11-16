@@ -33,6 +33,17 @@ func allDirectionsMap() map[string]direction {
 	}
 }
 
+// filterDirectionsMap returns a subset of the map that allDirectionsMap returns
+func filterDirectionsMap(original map[string]direction, filter []string) map[string]direction {
+	filtered := make(map[string]direction)
+	for _, key := range filter {
+		if val, exists := original[key]; exists {
+			filtered[key] = val
+		}
+	}
+	return filtered
+}
+
 // WordSearch contains config info and the actual grid of rows and cols
 type WordSearch struct {
 	Size       int
@@ -53,27 +64,44 @@ func createEmptyGrid(size int) [][]rune {
 }
 
 // NewWordSearch initializes and returns a WordSearch instance
-func NewWordSearch(size int) *WordSearch {
+func NewWordSearch(size int, cardinals []string) *WordSearch {
+	dirs := make(map[string]direction)
+	if cardinals == nil {
+		dirs = allDirectionsMap()
+	} else {
+		dirs = filterDirectionsMap(allDirectionsMap(), cardinals)
+	}
 	return &WordSearch{
 		Size:       size,
-		directions: allDirectionsMap(),
+		directions: dirs,
 		Grid:       createEmptyGrid(size),
 	}
 }
 
-// PlaceWord tries to write a word to the grid and returns an error if it isn't a valid location
+// PlaceWord tries to write a word to a specific place on the grid in a specific direction.
+// It returns an error if it can't be done for some reason.
+// It is assumed that Placeword is called on longer words before being called on shorter words.
+// This should keep a shorter word from being completely inside a longer one
 func (ws *WordSearch) PlaceWord(str string, row int, col int, cardinal string) error {
 	dir := ws.directions[cardinal]
 	word := []rune(str)
-	tempGrid := ws.Grid
+	tempGrid := ws.Grid // make a temp grid so a failed attempt doesn't corrupt the real one
+	overlapCount := 0   // the number of valid overlapping letters (a complete overlap of words is invalid)
+	// loop through each rune of the word
 	for i := 0; i < len(word); i++ {
 		r := row + i*dir.y
 		c := col + i*dir.x
 		if r < 0 || r >= ws.Size || c < 0 || c >= ws.Size {
 			return errors.New("word extends outside of the grid")
 		}
-		if ws.Grid[r][c] != defaultRune {
-			return errors.New("word would overlap an existing word")
+		if ws.Grid[r][c] != defaultRune && ws.Grid[r][c] != word[i] {
+			return errors.New("a letter would overwrite an existing (different) letter")
+		}
+		if ws.Grid[r][c] == word[i] {
+			overlapCount++
+		}
+		if overlapCount == len(word) {
+			return errors.New("word would be completely inside another word")
 		}
 		tempGrid[r][c] = word[i]
 	}
@@ -97,6 +125,7 @@ func (ws *WordSearch) fillRemainingGrid() {
 // of words that could not be placed
 func (ws *WordSearch) CreatePuzzle(words []string) (unplaced []string) {
 	// sort the slice of words by length, longest first
+	// this is to avoid a shorter word being placed entirely within another longer word
 	sort.Slice(words, func(i, j int) bool {
 		return len(words[i]) > len(words[j])
 	})
