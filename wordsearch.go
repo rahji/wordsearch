@@ -1,3 +1,10 @@
+// This package is the basis for a word search puzzle generator
+//
+// Creates word search puzzle data given a list of words and
+// an optional list of cardinal directions (e.g. "N", "SW", etc.)
+// in which words can be placed. The grid is a 2D slice of bytes
+// containing lowercase letters for "filler" letters and
+// uppercase letters for words that have been explicitly placed.
 package wordsearch
 
 import (
@@ -8,7 +15,7 @@ import (
 
 const (
 	alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	attempts = 100
+	attempts = 100 // max number of times to attempt to place a word
 )
 
 // direction is a private type that represents the 2 axes of a cardinal direction
@@ -44,11 +51,12 @@ func filterDirectionsMap(original map[string]direction, filter []string) map[str
 	return filtered
 }
 
-// WordSearch contains config info and the actual grid of rows and cols
+// WordSearch contains config info and the actual grid of rows and cols,
+// which can be accessed directly or via the helper method ReturnGrid
 type WordSearch struct {
 	Size       int
-	directions map[string]direction
 	Grid       [][]byte
+	directions map[string]direction
 }
 
 // isUppercase returns true if the byte is a capital letter.
@@ -81,8 +89,12 @@ func createEmptyGrid(size int) [][]byte {
 	return arr
 }
 
-// NewWordSearch initializes and returns a WordSearch instance
-func NewWordSearch(size int, cardinals []string) *WordSearch {
+// NewWordSearch initializes and returns a WordSearch instance.
+// The size parameter is both the width and height of the grid.
+// The cardinals parameter is either a slice of strings that are
+// abbreviations for the cardinal directions (N, NE, E, SE, S, SW, W, NW)
+// or nil for all possible directions.
+func NewWordSearch(size int, cardinals []string, overlaps bool) *WordSearch {
 	dirs := make(map[string]direction)
 	if cardinals == nil {
 		dirs = allDirectionsMap()
@@ -96,10 +108,13 @@ func NewWordSearch(size int, cardinals []string) *WordSearch {
 	}
 }
 
-// PlaceWord tries to write a word to a specific place on the grid in a specific direction.
-// It returns an error if it can't be done for some reason.
-// It is assumed that Placeword is called on longer words before being called on shorter words.
-// This should keep a shorter word from being completely inside a longer one
+// PlaceWord tries to write a single word to a specific place on the grid in a specific direction.
+// It returns an error if it can't be done for some reason. The possible reasons for failure are:
+//  1. The placement would extend outside of the grid
+//  2. A letter in the word would overwrite an existing (different) letter
+//  3. The word would be placed completely inside another word
+//
+// Reasons 2 and 3 are not relevant if the puzzle is configured to disallow overlaps.
 func (ws *WordSearch) PlaceWord(word string, row int, col int, cardinal string) error {
 	dir := ws.directions[cardinal]
 	tempGrid := ws.Grid // make a temp grid so a failed attempt doesn't corrupt the real one
@@ -126,8 +141,9 @@ func (ws *WordSearch) PlaceWord(word string, row int, col int, cardinal string) 
 	return nil
 }
 
-// CreatePuzzle places the words from the words list and returns a list
-// of words that could not be placed
+// CreatePuzzle places words from a words list, after sorting them by length, longest first.
+// It returns nil if successful. Otherwise it returns a slice of words that could not be placed
+// after the maximum number of attempts.
 func (ws *WordSearch) CreatePuzzle(words []string) (unplaced []string) {
 	// sort the slice of words by length, longest first
 	// this is to avoid a shorter word being placed entirely within another longer word
