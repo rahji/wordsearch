@@ -18,37 +18,35 @@ const (
 	attempts = 100 // max number of times to attempt to place a word
 )
 
-// direction is a private type that represents the 2 axes of a cardinal direction
-type direction struct {
+// vector is a private type that represents the 2 axes of a cardinal direction
+type vector struct {
 	x int
 	y int
 }
 
-// allDirectionsMap returns a map where keys are string representations
-// of cardinal directions and values are `direction` structs
-func allDirectionsMap() map[string]direction {
-	return map[string]direction{
-		"N":  {x: 0, y: -1},
-		"NE": {x: 1, y: -1},
-		"E":  {x: 1, y: 0},
-		"SE": {x: 1, y: 1},
-		"S":  {x: 0, y: 1},
-		"SW": {x: -1, y: 1},
-		"W":  {x: -1, y: 0},
-		"NW": {x: -1, y: -1},
+// cardinalToVector returns an xy vector for a given one- or two-letter abbreviation
+// for a cardinal direction
+func cardinalToVector(cardinal string) vector {
+	switch cardinal {
+	case "N":
+		return vector{x: 0, y: -1}
+	case "NE":
+		return vector{x: 0, y: 0}
+	case "E":
+		return vector{x: 1, y: 0}
+	case "SE":
+		return vector{x: 1, y: 1}
+	case "S":
+		return vector{x: 0, y: 1}
+	case "SW":
+		return vector{x: -1, y: 1}
+	case "W":
+		return vector{x: -1, y: 0}
+	case "NW":
+		return vector{x: -1, y: -1}
+	default:
+		panic("unrecognized cardinal direction")
 	}
-}
-
-// filterDirectionsMap returns a subset of the map that allDirectionsMap returns.
-// This is used to create a limited map of `direction` eg: to eliminate diagonal placement, etc.
-func filterDirectionsMap(original map[string]direction, filter []string) map[string]direction {
-	filtered := make(map[string]direction)
-	for _, key := range filter {
-		if val, exists := original[key]; exists {
-			filtered[key] = val
-		}
-	}
-	return filtered
 }
 
 // WordSearch is a struct that contains the puzzle configuration and the actual grid of rows and cols,
@@ -60,7 +58,6 @@ type WordSearch struct {
 	Grid       [][]byte
 	Directions []string
 	Overlaps   bool
-	directions map[string]direction
 }
 
 // isUppercase returns true if the byte is a capital letter.
@@ -100,17 +97,13 @@ func createEmptyGrid(size int) [][]byte {
 // or nil for all possible directions.
 // The overlaps parameter determines whether any overlapping of words is allowed.
 func NewWordSearch(size int, cardinals []string, overlaps bool) *WordSearch {
-	dirs := make(map[string]direction)
 	if cardinals == nil {
-		dirs = allDirectionsMap()
-	} else {
-		dirs = filterDirectionsMap(allDirectionsMap(), cardinals)
+		cardinals = []string{"N", "NE", "E", "SE", "S", "SW", "W", "NW"}
 	}
 	return &WordSearch{
 		Size:       size,
 		Directions: cardinals,
 		Overlaps:   overlaps,
-		directions: dirs,
 		Grid:       createEmptyGrid(size),
 	}
 }
@@ -122,7 +115,7 @@ func NewWordSearch(size int, cardinals []string, overlaps bool) *WordSearch {
 //  3. A letter overlaps another placed letter and overlaps are disallowed in this word search
 //  4. Overlaps are alllowed, but the word would be placed completely inside another word (which is never allowed)
 func (ws *WordSearch) PlaceWord(word string, row int, col int, cardinal string) error {
-	dir := ws.directions[cardinal]
+	dir := cardinalToVector(cardinal)
 	tempGrid := ws.Grid // make a temp grid so a failed attempt doesn't corrupt the real one
 	overlapCount := 0   // the number of valid overlapping letters (a complete overlap of words is invalid)
 	// loop through each byte of the word
@@ -159,19 +152,15 @@ func (ws *WordSearch) CreatePuzzle(words []string) (unplaced []string) {
 	sort.Slice(words, func(i, j int) bool {
 		return len(words[i]) > len(words[j])
 	})
-	// make a slice of strings containing the keys to the direction map (eg: "N", "SE", etc.)
-	keys := make([]string, 0, len(ws.directions))
-	for key := range ws.directions {
-		keys = append(keys, key)
-	}
 	// make a bunch of random attempts to fit each word into the grid
 	for _, word := range words {
 		placed := false
 		for i := 0; i < attempts; i++ {
-			dir := keys[rand.Intn(len(keys))] // `dir` is "N", "SE", etc.
+			randomIndex := rand.Intn(len(ws.Directions))
+			randomCardinal := ws.Directions[randomIndex]
 			row := rand.Intn(ws.Size - 1)
 			col := rand.Intn(ws.Size - 1)
-			err := ws.PlaceWord(word, row, col, dir)
+			err := ws.PlaceWord(word, row, col, randomCardinal)
 			if err == nil {
 				placed = true
 				break

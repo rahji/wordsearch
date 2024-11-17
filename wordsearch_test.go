@@ -14,7 +14,7 @@ func printGrid(t *testing.T, grid [][]byte) {
 // TestCreateEmptyGrid creates a WordSearch instance and verifies that an empty grid was created
 func TestCreateEmptyGrid(t *testing.T) {
 
-	ws := NewWordSearch(15, nil)
+	ws := NewWordSearch(15, nil, true)
 
 	t.Run("Check if the row slice has the correct length", func(t *testing.T) {
 		if len(ws.Grid) != 15 {
@@ -96,7 +96,7 @@ func TestPlaceWord(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ws := NewWordSearch(10, nil)
+			ws := NewWordSearch(10, nil, true)
 			err := ws.PlaceWord("FOUR", tt.row, tt.col, tt.direction)
 			if (err != nil) != tt.wantError {
 				t.Errorf("PlaceWord() error = %v, wantError %v got %v", err, tt.wantError, err != nil)
@@ -110,7 +110,11 @@ func TestPlaceWord(t *testing.T) {
 // TestOverlappingWords tests specifically for different word overlap cases
 func TestOverlappingWords(t *testing.T) {
 
-	ws := NewWordSearch(10, nil)
+	// Make a wordsearch struct that temporarily allows overlaps.
+	// The Overlaps field will be changed directly depending on the test below
+	// We're creating the ws variable here because each test builds on the previous one
+	// so we don't want to recreate ws with each test!
+	ws := NewWordSearch(10, nil, true)
 
 	tests := []struct {
 		name      string
@@ -118,6 +122,7 @@ func TestOverlappingWords(t *testing.T) {
 		row       int
 		col       int
 		dir       string
+		overlap   bool
 		wantError bool
 	}{
 		{
@@ -126,6 +131,7 @@ func TestOverlappingWords(t *testing.T) {
 			row:       0,
 			col:       0,
 			dir:       "S",
+			overlap:   true,
 			wantError: false,
 		},
 		{
@@ -134,6 +140,7 @@ func TestOverlappingWords(t *testing.T) {
 			row:       1,
 			col:       0,
 			dir:       "E",
+			overlap:   true,
 			wantError: false,
 		},
 		{
@@ -142,6 +149,7 @@ func TestOverlappingWords(t *testing.T) {
 			row:       3,
 			col:       0,
 			dir:       "S",
+			overlap:   true,
 			wantError: false,
 		},
 		{
@@ -150,15 +158,26 @@ func TestOverlappingWords(t *testing.T) {
 			row:       3,
 			col:       0,
 			dir:       "S",
+			overlap:   true,
+			wantError: true,
+		},
+		{
+			name:      "Try to overlap the F in FOO onto FOODIE when overlaps are disallowed",
+			word:      "FOO",
+			row:       0,
+			col:       0,
+			dir:       "E",
+			overlap:   false,
 			wantError: true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			ws.Overlaps = tt.overlap
 			err := ws.PlaceWord(tt.word, tt.row, tt.col, tt.dir)
 			if (err != nil) != tt.wantError {
-				t.Errorf("Overlapping error = %v, wantError %v got %v", err, tt.wantError, err != nil)
+				t.Errorf("Overlapping overlaps = %v, error = %v, wantError %v got %v", ws.Overlaps, err, tt.wantError, err != nil)
 			}
 			t.Log(tt.name)
 			printGrid(t, ws.Grid)
@@ -178,13 +197,13 @@ func TestCreatePuzzle(t *testing.T) {
 	}{
 		{
 			name:           "normal 10x10 grid: ONE TWO THREE FOUR",
-			wordsearch:     *NewWordSearch(10, nil),
+			wordsearch:     *NewWordSearch(10, nil, true),
 			words:          []string{"ONE", "TWO", "THREE", "FOUR"},
 			expectUnplaced: false,
 		},
 		{
 			name:           "impossible 3x3 grid: ONE OOO TWO DOS PRO",
-			wordsearch:     *NewWordSearch(3, nil),
+			wordsearch:     *NewWordSearch(3, nil, true),
 			words:          []string{"ONE", "OOO", "TWO", "DOS", "PRO"},
 			expectUnplaced: true,
 		},
