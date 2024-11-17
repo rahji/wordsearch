@@ -51,11 +51,15 @@ func filterDirectionsMap(original map[string]direction, filter []string) map[str
 	return filtered
 }
 
-// WordSearch contains config info and the actual grid of rows and cols,
-// which can be accessed directly or via the helper method ReturnGrid
+// WordSearch is a struct that contains the puzzle configuration and the actual grid of rows and cols,
+// which can be accessed directly or via the helper method ReturnGrid. The config includes the
+// size of the puzzle, allowable directions (as one- or two-letter abbreviations for the cardinal directions),
+// and whether overlapping is allowed
 type WordSearch struct {
 	Size       int
 	Grid       [][]byte
+	Directions []string
+	Overlaps   bool
 	directions map[string]direction
 }
 
@@ -94,6 +98,7 @@ func createEmptyGrid(size int) [][]byte {
 // The cardinals parameter is either a slice of strings that are
 // abbreviations for the cardinal directions (N, NE, E, SE, S, SW, W, NW)
 // or nil for all possible directions.
+// The overlaps parameter determines whether any overlapping of words is allowed.
 func NewWordSearch(size int, cardinals []string, overlaps bool) *WordSearch {
 	dirs := make(map[string]direction)
 	if cardinals == nil {
@@ -103,6 +108,8 @@ func NewWordSearch(size int, cardinals []string, overlaps bool) *WordSearch {
 	}
 	return &WordSearch{
 		Size:       size,
+		Directions: cardinals,
+		Overlaps:   overlaps,
 		directions: dirs,
 		Grid:       createEmptyGrid(size),
 	}
@@ -112,9 +119,8 @@ func NewWordSearch(size int, cardinals []string, overlaps bool) *WordSearch {
 // It returns an error if it can't be done for some reason. The possible reasons for failure are:
 //  1. The placement would extend outside of the grid
 //  2. A letter in the word would overwrite an existing (different) letter
-//  3. The word would be placed completely inside another word
-//
-// Reasons 2 and 3 are not relevant if the puzzle is configured to disallow overlaps.
+//  3. A letter overlaps another placed letter and overlaps are disallowed in this word search
+//  4. Overlaps are alllowed, but the word would be placed completely inside another word (which is never allowed)
 func (ws *WordSearch) PlaceWord(word string, row int, col int, cardinal string) error {
 	dir := ws.directions[cardinal]
 	tempGrid := ws.Grid // make a temp grid so a failed attempt doesn't corrupt the real one
@@ -125,6 +131,9 @@ func (ws *WordSearch) PlaceWord(word string, row int, col int, cardinal string) 
 		c := col + i*dir.x
 		if r < 0 || r >= ws.Size || c < 0 || c >= ws.Size {
 			return errors.New("word extends outside of the grid")
+		}
+		if isUppercase(ws.Grid[r][c]) && ws.Overlaps == false {
+			return errors.New("a letter would overlap another letter and overlaps are disallowed")
 		}
 		if isUppercase(ws.Grid[r][c]) && ws.Grid[r][c] != word[i] {
 			return errors.New("a letter would overwrite an existing (different) letter")
