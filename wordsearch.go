@@ -1,17 +1,19 @@
 // This package is the basis for a word search puzzle generator
 //
-// Creates word search puzzle data given a list of words,
-// an optional list of cardinal directions (e.g. "N", "SW", etc.)
-// in which words can be placed, and whether overlapping letters
-// are allowed. The grid is a 2D slice of bytes
+// It generates a grid of letters containing a list of hidden words.
+// Configuration includes an optional list of cardinal directions (e.g. "N", "SW", etc.)
+// in which words can be placed, the size of the grid, and whether
+// overlapping letters are allowed. The grid is a 2D slice of bytes
 // containing lowercase letters for "filler" letters and
 // uppercase letters for words that have been explicitly placed.
+// A helper function can return the grid in other formats.
 package wordsearch
 
 import (
 	"errors"
 	"math/rand"
 	"sort"
+	"strings"
 
 	"github.com/rahji/wordsearch/internal/letters"
 	"github.com/rahji/wordsearch/internal/vector"
@@ -22,6 +24,7 @@ const (
 	attempts = 100 // max number of times to attempt to place a word
 )
 
+// Gridstyle is an enum-like list of ways that the output of ReturnGrid can be styled
 type GridStyle int
 
 const (
@@ -115,6 +118,7 @@ func (ws *WordSearch) ReturnGrid(style GridStyle) [][]byte {
 }
 
 // PlaceWord tries to write a single word to a specific place on the grid in a specific direction.
+// This function is where the word gets capitalized. It is assumed to be a word made only of the letters A-Z.
 // It returns an error if it can't be done for some reason. The possible reasons for failure are:
 //  1. The placement would extend outside of the grid
 //  2. A letter in the word would overwrite an existing (different) letter
@@ -131,6 +135,7 @@ func (ws *WordSearch) PlaceWord(word string, row int, col int, cardinal string) 
 		copy(tempGrid[i], ws.Grid[i])
 	}
 	// loop through each byte of the word
+	word = strings.ToUpper(word)
 	for i := 0; i < len(word); i++ {
 		r := row + i*dir.Y
 		c := col + i*dir.X
