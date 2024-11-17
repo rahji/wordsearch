@@ -1,11 +1,13 @@
 package letters
 
 // IsUppercase returns true if the byte is a capital letter.
-// Capital letters are intentionally placed letters, while lowercase letters are randomly placed and
-// can be overwritten with intentionally placed letters. Everything in the grid should either be a
-// lowercase or uppercase letter.
 func IsUppercase(b byte) bool {
 	return b >= 'A' && b <= 'Z'
+}
+
+// IsLowercase returns true if the byte is a lowercase letter.
+func IsLowercase(b byte) bool {
+	return b >= 'a' && b <= 'z'
 }
 
 // ToLowercase turns an byte into lowercase

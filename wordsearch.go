@@ -22,6 +22,16 @@ const (
 	attempts = 100 // max number of times to attempt to place a word
 )
 
+type GridStyle int
+
+const (
+	GridRaw GridStyle = iota
+	GridWithDots
+	GridWithSpaces
+	GridAllUppercase
+	GridAllLowercase
+)
+
 // WordSearch is a struct that contains the puzzle configuration and the actual grid of rows and cols,
 // which can be accessed directly or via the helper method ReturnGrid. The config includes the
 // size of the puzzle, allowable directions (as one- or two-letter abbreviations for the cardinal directions),
@@ -63,6 +73,45 @@ func NewWordSearch(size int, cardinals []string, overlaps bool) *WordSearch {
 		Overlaps:   overlaps,
 		Grid:       createEmptyGrid(size),
 	}
+}
+
+// ReturnGrid returns the grid, with the bytes restyled using a parameter of the GridStyle type
+func (ws *WordSearch) ReturnGrid(style GridStyle) [][]byte {
+	if style == GridRaw {
+		return ws.Grid
+	}
+
+	returnGrid := make([][]byte, len(ws.Grid))
+	for r := range ws.Grid {
+		returnGrid[r] = make([]byte, len(ws.Grid[r]))
+	}
+
+	// if the lowercase letters are going to be replaced with symbols...
+	replacementChar := byte(0)
+	switch style {
+	case GridWithDots:
+		replacementChar = '.'
+	case GridWithSpaces:
+		replacementChar = ' '
+	}
+
+	// loop through the grid and replace either lowercase or uppercase letters...
+	for i, row := range ws.Grid {
+		for j, b := range row {
+			returnGrid[i][j] = b
+			// replace lowercase byte with a symbol if that's the style
+			if replacementChar != 0 && letters.IsLowercase(b) {
+				returnGrid[i][j] = replacementChar
+			}
+			if style == GridAllLowercase {
+				returnGrid[i][j] = letters.ToLowercase(b)
+			}
+			if style == GridAllUppercase {
+				returnGrid[i][j] = letters.ToUppercase(b)
+			}
+		}
+	}
+	return returnGrid
 }
 
 // PlaceWord tries to write a single word to a specific place on the grid in a specific direction.

@@ -1,6 +1,7 @@
 package wordsearch
 
 import (
+	"fmt"
 	"testing"
 )
 
@@ -21,7 +22,6 @@ func TestCreateEmptyGrid(t *testing.T) {
 			t.Errorf("Expected grid length of 15, got %d", len(ws.Grid))
 		}
 	})
-
 	t.Run("Check if the column slice has the correct length", func(t *testing.T) {
 		for i, row := range ws.Grid {
 			if len(row) != 15 {
@@ -29,7 +29,6 @@ func TestCreateEmptyGrid(t *testing.T) {
 			}
 		}
 	})
-
 	t.Run("Check if all elements are lowercase letters", func(t *testing.T) {
 		for i, row := range ws.Grid {
 			for j, char := range row {
@@ -212,11 +211,12 @@ func TestCreatePuzzle(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			unplaced := tt.wordsearch.CreatePuzzle(tt.words)
+			fmt.Printf("xxx %v\n", unplaced)
 			if len(unplaced) > 0 && !tt.expectUnplaced {
 				t.Errorf("expected no unplaced, got %v", len(unplaced))
 			}
 			// fmt.Printf("%d unplaced: %v\n", len(unplaced), unplaced)
-			printGrid(t, tt.wordsearch.Grid)
+			printGrid(t, tt.wordsearch.ReturnGrid(GridWithDots))
 		})
 	}
 }
