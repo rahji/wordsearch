@@ -7,7 +7,7 @@ Documentation should be here: https://pkg.go.dev/github.com/rahji/wordsearch
 ## Installation
 
 ```bash
-go get github.com/rahji/wordsearch
+go get github.com/rahji/wordsearch@latest
 ```
 
 ## Usage
