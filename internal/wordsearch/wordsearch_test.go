@@ -1,12 +1,11 @@
 package wordsearch
 
 import (
-	"strings"
 	"testing"
 )
 
 // printGrid is a private function that logs the grid
-func printGrid(t *testing.T, grid [][]rune) {
+func printGrid(t *testing.T, grid [][]byte) {
 	for _, cell := range grid {
 		t.Log(string(cell))
 	}
@@ -31,48 +30,15 @@ func TestCreateEmptyGrid(t *testing.T) {
 		}
 	})
 
-	t.Run("Check if all elements are the default rune", func(t *testing.T) {
+	t.Run("Check if all elements are lowercase letters", func(t *testing.T) {
 		for i, row := range ws.Grid {
 			for j, char := range row {
-				if char != '.' {
-					t.Errorf("Position [%d][%d]: Expected '*', got %c", i, j, char)
+				if !(char >= 'a' && char <= 'z') {
+					t.Errorf("Position [%d][%d]: Expected lowercase letter, got %c", i, j, char)
 				}
 			}
 		}
 	})
-}
-
-// TestFillGridVariousSizes tests that different sized grids can be filled with letters.
-// It also shows that multiple WordSearch instances can be created.
-func TestFillGridVariousSizes(t *testing.T) {
-
-	tests := []struct {
-		name       string
-		wordsearch WordSearch
-	}{
-		{"Create a small grid", *NewWordSearch(5, nil)},
-		{"Creat a large grid", *NewWordSearch(24, nil)},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-
-			printGrid(t, tt.wordsearch.Grid)
-			tt.wordsearch.fillRemainingGrid()
-			printGrid(t, tt.wordsearch.Grid)
-
-			// Verify all positions contain valid letters
-			validChars := "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-			for i := range tt.wordsearch.Grid {
-				for j := range tt.wordsearch.Grid[i] {
-					index := strings.IndexRune(validChars, tt.wordsearch.Grid[i][j])
-					if index == -1 {
-						t.Errorf("Position [%d][%d]: Expected a letter A-Z, got %c", i, j, tt.wordsearch.Grid[i][j])
-					}
-				}
-			}
-		})
-	}
 }
 
 // TestPlaceWord tests the placement of the word FOUR in various positions and directions

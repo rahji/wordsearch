@@ -7,9 +7,8 @@ import (
 )
 
 const (
-	defaultRune = '.'
-	alphabet    = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	attempts    = 100
+	alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	attempts = 100
 )
 
 // direction is a private type that represents the 2 axes of a cardinal direction
@@ -33,7 +32,8 @@ func allDirectionsMap() map[string]direction {
 	}
 }
 
-// filterDirectionsMap returns a subset of the map that allDirectionsMap returns
+// filterDirectionsMap returns a subset of the map that allDirectionsMap returns.
+// This is used to create a limited map of `direction` eg: to eliminate diagonal placement, etc.
 func filterDirectionsMap(original map[string]direction, filter []string) map[string]direction {
 	filtered := make(map[string]direction)
 	for _, key := range filter {
@@ -48,16 +48,34 @@ func filterDirectionsMap(original map[string]direction, filter []string) map[str
 type WordSearch struct {
 	Size       int
 	directions map[string]direction
-	Grid       [][]rune
+	Grid       [][]byte
 }
 
-// createEmptyGrid creates a 2d slice of runes with the default rune in each element.
-func createEmptyGrid(size int) [][]rune {
-	arr := make([][]rune, size)
+// isUppercase returns true if the byte is a capital letter.
+// Capital letters are intentionally placed letters, while lowercase letters are randomly placed and
+// can be overwritten with intentionally placed letters. Everything in the grid should either be a
+// lowercase or uppercase letter.
+func isUppercase(b byte) bool {
+	return b >= 'A' && b <= 'Z'
+}
+
+// toLowercase turns an uppercase byte into lowercase
+func toLowercase(b byte) byte {
+	if b >= 'A' && b <= 'Z' {
+		return b + 32
+	}
+	return b
+}
+
+// createEmptyGrid creates a 2d slice of bytes with random lowercase letters in each element.
+// Lowercase letters represent letters that were not placed intentionally.
+func createEmptyGrid(size int) [][]byte {
+	arr := make([][]byte, size)
 	for i := range arr {
-		arr[i] = make([]rune, size)
+		arr[i] = make([]byte, size)
 		for j := range arr[i] {
-			arr[i][j] = defaultRune
+			randomIndex := rand.Intn(len(alphabet))
+			arr[i][j] = toLowercase(alphabet[randomIndex])
 		}
 	}
 	return arr
@@ -82,19 +100,18 @@ func NewWordSearch(size int, cardinals []string) *WordSearch {
 // It returns an error if it can't be done for some reason.
 // It is assumed that Placeword is called on longer words before being called on shorter words.
 // This should keep a shorter word from being completely inside a longer one
-func (ws *WordSearch) PlaceWord(str string, row int, col int, cardinal string) error {
+func (ws *WordSearch) PlaceWord(word string, row int, col int, cardinal string) error {
 	dir := ws.directions[cardinal]
-	word := []rune(str)
 	tempGrid := ws.Grid // make a temp grid so a failed attempt doesn't corrupt the real one
 	overlapCount := 0   // the number of valid overlapping letters (a complete overlap of words is invalid)
-	// loop through each rune of the word
+	// loop through each byte of the word
 	for i := 0; i < len(word); i++ {
 		r := row + i*dir.y
 		c := col + i*dir.x
 		if r < 0 || r >= ws.Size || c < 0 || c >= ws.Size {
 			return errors.New("word extends outside of the grid")
 		}
-		if ws.Grid[r][c] != defaultRune && ws.Grid[r][c] != word[i] {
+		if isUppercase(ws.Grid[r][c]) && ws.Grid[r][c] != word[i] {
 			return errors.New("a letter would overwrite an existing (different) letter")
 		}
 		if ws.Grid[r][c] == word[i] {
@@ -107,18 +124,6 @@ func (ws *WordSearch) PlaceWord(str string, row int, col int, cardinal string) e
 	}
 	ws.Grid = tempGrid
 	return nil
-}
-
-// fillRemainingGrid replaces any default runes to a random letter in the whole grid
-func (ws *WordSearch) fillRemainingGrid() {
-	letters := []rune(alphabet)
-	for i := range ws.Grid {
-		for j := range ws.Grid[i] {
-			if ws.Grid[i][j] == defaultRune {
-				ws.Grid[i][j] = letters[rand.Intn(len(letters))]
-			}
-		}
-	}
 }
 
 // CreatePuzzle places the words from the words list and returns a list
@@ -151,6 +156,5 @@ func (ws *WordSearch) CreatePuzzle(words []string) (unplaced []string) {
 			unplaced = append(unplaced, word)
 		}
 	}
-	ws.fillRemainingGrid()
 	return
 }
