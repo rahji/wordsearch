@@ -1,8 +1,9 @@
 // This package is the basis for a word search puzzle generator
 //
-// Creates word search puzzle data given a list of words and
+// Creates word search puzzle data given a list of words,
 // an optional list of cardinal directions (e.g. "N", "SW", etc.)
-// in which words can be placed. The grid is a 2D slice of bytes
+// in which words can be placed, and whether overlapping letters
+// are allowed. The grid is a 2D slice of bytes
 // containing lowercase letters for "filler" letters and
 // uppercase letters for words that have been explicitly placed.
 package wordsearch
@@ -11,43 +12,15 @@ import (
 	"errors"
 	"math/rand"
 	"sort"
+
+	"github.com/rahji/wordsearch/internal/letters"
+	"github.com/rahji/wordsearch/internal/vector"
 )
 
 const (
 	alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	attempts = 100 // max number of times to attempt to place a word
 )
-
-// vector is a private type that represents the 2 axes of a cardinal direction
-type vector struct {
-	x int
-	y int
-}
-
-// cardinalToVector returns an xy vector for a given one- or two-letter abbreviation
-// for a cardinal direction
-func cardinalToVector(cardinal string) vector {
-	switch cardinal {
-	case "N":
-		return vector{x: 0, y: -1}
-	case "NE":
-		return vector{x: 0, y: 0}
-	case "E":
-		return vector{x: 1, y: 0}
-	case "SE":
-		return vector{x: 1, y: 1}
-	case "S":
-		return vector{x: 0, y: 1}
-	case "SW":
-		return vector{x: -1, y: 1}
-	case "W":
-		return vector{x: -1, y: 0}
-	case "NW":
-		return vector{x: -1, y: -1}
-	default:
-		panic("unrecognized cardinal direction")
-	}
-}
 
 // WordSearch is a struct that contains the puzzle configuration and the actual grid of rows and cols,
 // which can be accessed directly or via the helper method ReturnGrid. The config includes the
@@ -60,22 +33,6 @@ type WordSearch struct {
 	Overlaps   bool
 }
 
-// isUppercase returns true if the byte is a capital letter.
-// Capital letters are intentionally placed letters, while lowercase letters are randomly placed and
-// can be overwritten with intentionally placed letters. Everything in the grid should either be a
-// lowercase or uppercase letter.
-func isUppercase(b byte) bool {
-	return b >= 'A' && b <= 'Z'
-}
-
-// toLowercase turns an uppercase byte into lowercase
-func toLowercase(b byte) byte {
-	if b >= 'A' && b <= 'Z' {
-		return b + 32
-	}
-	return b
-}
-
 // createEmptyGrid creates a 2d slice of bytes with random lowercase letters in each element.
 // Lowercase letters represent letters that were not placed intentionally.
 func createEmptyGrid(size int) [][]byte {
@@ -84,7 +41,7 @@ func createEmptyGrid(size int) [][]byte {
 		arr[i] = make([]byte, size)
 		for j := range arr[i] {
 			randomIndex := rand.Intn(len(alphabet))
-			arr[i][j] = toLowercase(alphabet[randomIndex])
+			arr[i][j] = letters.ToLowercase(alphabet[randomIndex])
 		}
 	}
 	return arr
@@ -115,20 +72,26 @@ func NewWordSearch(size int, cardinals []string, overlaps bool) *WordSearch {
 //  3. A letter overlaps another placed letter and overlaps are disallowed in this word search
 //  4. Overlaps are alllowed, but the word would be placed completely inside another word (which is never allowed)
 func (ws *WordSearch) PlaceWord(word string, row int, col int, cardinal string) error {
-	dir := cardinalToVector(cardinal)
-	tempGrid := ws.Grid // make a temp grid so a failed attempt doesn't corrupt the real one
-	overlapCount := 0   // the number of valid overlapping letters (a complete overlap of words is invalid)
+	dir := vector.CardinalToVector(cardinal)
+	overlapCount := 0 // the number of valid overlapping letters (a complete overlap of words is invalid)
+
+	// make a deep copy of the grid so a failed attempt won't screw up the real grid
+	tempGrid := make([][]byte, len(ws.Grid))
+	for i := range ws.Grid {
+		tempGrid[i] = make([]byte, len(ws.Grid[i]))
+		copy(tempGrid[i], ws.Grid[i])
+	}
 	// loop through each byte of the word
 	for i := 0; i < len(word); i++ {
-		r := row + i*dir.y
-		c := col + i*dir.x
+		r := row + i*dir.Y
+		c := col + i*dir.X
 		if r < 0 || r >= ws.Size || c < 0 || c >= ws.Size {
 			return errors.New("word extends outside of the grid")
 		}
-		if isUppercase(ws.Grid[r][c]) && ws.Overlaps == false {
+		if letters.IsUppercase(ws.Grid[r][c]) && ws.Overlaps == false {
 			return errors.New("a letter would overlap another letter and overlaps are disallowed")
 		}
-		if isUppercase(ws.Grid[r][c]) && ws.Grid[r][c] != word[i] {
+		if letters.IsUppercase(ws.Grid[r][c]) && ws.Grid[r][c] != word[i] {
 			return errors.New("a letter would overwrite an existing (different) letter")
 		}
 		if ws.Grid[r][c] == word[i] {

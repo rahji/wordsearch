@@ -1,3 +1,3 @@
-module github.com/rahji/wordfinds
+module github.com/rahji/wordsearch
 
 go 1.22.0

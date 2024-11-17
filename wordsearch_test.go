@@ -196,8 +196,8 @@ func TestCreatePuzzle(t *testing.T) {
 		expectUnplaced bool
 	}{
 		{
-			name:           "normal 10x10 grid: ONE TWO THREE FOUR",
-			wordsearch:     *NewWordSearch(10, nil, true),
+			name:           "normal 8x8 grid: ONE TWO THREE FOUR",
+			wordsearch:     *NewWordSearch(8, nil, true),
 			words:          []string{"ONE", "TWO", "THREE", "FOUR"},
 			expectUnplaced: false,
 		},
