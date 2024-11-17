@@ -1,7 +1,6 @@
 package wordsearch
 
 import (
-	"fmt"
 	"testing"
 )
 
@@ -101,7 +100,7 @@ func TestPlaceWord(t *testing.T) {
 				t.Errorf("PlaceWord() error = %v, wantError %v got %v", err, tt.wantError, err != nil)
 			}
 			t.Log(tt.name)
-			printGrid(t, ws.Grid)
+			printGrid(t, ws.ReturnGrid(GridWithDots))
 		})
 	}
 }
@@ -179,7 +178,7 @@ func TestOverlappingWords(t *testing.T) {
 				t.Errorf("Overlapping overlaps = %v, error = %v, wantError %v got %v", ws.Overlaps, err, tt.wantError, err != nil)
 			}
 			t.Log(tt.name)
-			printGrid(t, ws.Grid)
+			printGrid(t, ws.ReturnGrid(GridWithDots))
 		})
 	}
 
@@ -211,7 +210,6 @@ func TestCreatePuzzle(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			unplaced := tt.wordsearch.CreatePuzzle(tt.words)
-			fmt.Printf("xxx %v\n", unplaced)
 			if len(unplaced) > 0 && !tt.expectUnplaced {
 				t.Errorf("expected no unplaced, got %v", len(unplaced))
 			}

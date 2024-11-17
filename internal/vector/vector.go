@@ -13,7 +13,7 @@ func CardinalToVector(cardinal string) Vector {
 	case "N":
 		return Vector{X: 0, Y: -1}
 	case "NE":
-		return Vector{X: 0, Y: 0}
+		return Vector{X: 1, Y: -1}
 	case "E":
 		return Vector{X: 1, Y: 0}
 	case "SE":
