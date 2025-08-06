@@ -14,7 +14,7 @@ func printGrid(t *testing.T, grid [][]byte) {
 // TestCreateEmptyGrid creates a WordSearch instance and verifies that an empty grid was created
 func TestCreateEmptyGrid(t *testing.T) {
 
-	ws := NewWordSearch(15, nil, true)
+	ws := NewWordSearch(15) // default is all directions, with overlaps
 
 	t.Run("Check if the row slice has the correct length", func(t *testing.T) {
 		if len(ws.Grid) != 15 {
@@ -94,7 +94,7 @@ func TestPlaceWord(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ws := NewWordSearch(10, nil, true)
+			ws := NewWordSearch(10)
 			err := ws.PlaceWord("FOUR", tt.row, tt.col, tt.direction)
 			if (err != nil) != tt.wantError {
 				t.Errorf("PlaceWord() error = %v, wantError %v got %v", err, tt.wantError, err != nil)
@@ -112,7 +112,7 @@ func TestOverlappingWords(t *testing.T) {
 	// The Overlaps field will be changed directly depending on the test below
 	// We're creating the ws variable here because each test builds on the previous one
 	// so we don't want to recreate ws with each test!
-	ws := NewWordSearch(10, nil, true)
+	ws := NewWordSearch(10)
 
 	tests := []struct {
 		name      string
@@ -195,13 +195,13 @@ func TestCreatePuzzle(t *testing.T) {
 	}{
 		{
 			name:           "normal 8x8 grid: ONE TWO THREE FOUR",
-			wordsearch:     *NewWordSearch(8, nil, true),
+			wordsearch:     *NewWordSearch(8),
 			words:          []string{"ONE", "TWO", "THREE", "FOUR"},
 			expectUnplaced: false,
 		},
 		{
 			name:           "impossible 3x3 grid: ONE OOO TWO DOS PRO",
-			wordsearch:     *NewWordSearch(3, nil, true),
+			wordsearch:     *NewWordSearch(3),
 			words:          []string{"ONE", "OOO", "TWO", "DOS", "PRO"},
 			expectUnplaced: true,
 		},

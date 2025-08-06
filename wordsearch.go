@@ -28,11 +28,11 @@ const (
 type GridStyle int
 
 const (
-	GridRaw GridStyle = iota
-	GridWithDots
-	GridWithSpaces
-	GridAllUppercase
-	GridAllLowercase
+	GridRaw          GridStyle = iota
+	GridWithDots               // dots for spots on the grid that are not significant
+	GridWithSpaces             // spaces for spots on the grid that are not significant
+	GridAllUppercase           // the standard way to view a playable puzzle grid
+	GridAllLowercase           // a playable, but lowercase, version of the puzzle grid
 )
 
 // WordSearch is a struct that contains the puzzle configuration and the actual grid of rows and cols,
@@ -44,6 +44,25 @@ type WordSearch struct {
 	Grid       [][]byte
 	Directions []string
 	Overlaps   bool
+}
+
+type Option func(*WordSearch)
+
+// The WithDirections option is a slice of strings that are
+// abbreviations for the cardinal directions (N, NE, E, SE, S, SW, W, NW).
+// Those are the word directions that are allowed when generating the puzzle.
+// If this option is not used, then all directions are allowed.
+func WithDirections(cardinals []string) Option {
+	return func(ws *WordSearch) {
+		ws.Directions = cardinals
+	}
+}
+
+// The WithoutOverlaps function says that overlapping of words is disallowed.
+func WithoutOverlaps() Option {
+	return func(ws *WordSearch) {
+		ws.Overlaps = false
+	}
 }
 
 // createEmptyGrid creates a 2d slice of bytes with random lowercase letters in each element.
@@ -61,21 +80,22 @@ func createEmptyGrid(size int) [][]byte {
 }
 
 // NewWordSearch initializes and returns a WordSearch instance.
-// The size parameter is both the width and height of the grid.
-// The cardinals parameter is either a slice of strings that are
-// abbreviations for the cardinal directions (N, NE, E, SE, S, SW, W, NW)
-// or nil for all possible directions.
-// The overlaps parameter determines whether any overlapping of words is allowed.
-func NewWordSearch(size int, cardinals []string, overlaps bool) *WordSearch {
-	if cardinals == nil {
-		cardinals = []string{"N", "NE", "E", "SE", "S", "SW", "W", "NW"}
+// The size parameter is both the width and height of the (square) grid.
+func NewWordSearch(size int, opt ...Option) *WordSearch {
+	ws := new(WordSearch)
+	ws.Size = size
+	ws.Grid = createEmptyGrid(size)
+	ws.Overlaps = true // unless it's about to be overwritten by the WithoutOverlaps option
+
+	for _, o := range opt {
+		o(ws)
 	}
-	return &WordSearch{
-		Size:       size,
-		Directions: cardinals,
-		Overlaps:   overlaps,
-		Grid:       createEmptyGrid(size),
+
+	if ws.Directions == nil {
+		ws.Directions = []string{"N", "NE", "E", "SE", "S", "SW", "W", "NW"}
 	}
+
+	return ws
 }
 
 // ReturnGrid returns the grid, with the bytes restyled using a parameter of the GridStyle type
@@ -172,7 +192,7 @@ func (ws *WordSearch) CreatePuzzle(words []string) (unplaced []string) {
 	// make a bunch of random attempts to fit each word into the grid
 	for _, word := range words {
 		placed := false
-		for i := 0; i < attempts; i++ {
+		for range attempts {
 			randomIndex := rand.Intn(len(ws.Directions))
 			randomCardinal := ws.Directions[randomIndex]
 			row := rand.Intn(ws.Size - 1)
