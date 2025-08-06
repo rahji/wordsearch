@@ -2,14 +2,14 @@
 
 This is a Go package that can be used for making a Word Search puzzle generator or interactive game.
 
-Documentation should be here: https://pkg.go.dev/github.com/rahji/wordsearch
+Documentation should be here: https://pkg.go.dev/github.com/rahji/wordsearch/v2
 
-> Note that version 2 changes the way the constructor works.
+> Note that version 2 changes the way the constructor works and is the preferred version
 
 ## Installation
 
 ```bash
-go get github.com/rahji/wordsearch@latest
+go get github.com/rahji/wordsearch/v2@latest
 ```
 
 ## Usage
