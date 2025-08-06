@@ -37,7 +37,9 @@ This example shows how options can be used to create a kid-friendly puzzle:
 
 ```go
 ws := wordsearch.NewWordSearch(16,
-	wordsearch.WithDirections([]string{"N","E","W","S"}),
+	wordsearch.WithDirections([]string{"S","E"}),
 	wordsearch.WithoutOverlap()
 )
 ```
+
+For another example, see <https://github.com/rahji/wordsearch-cli>
